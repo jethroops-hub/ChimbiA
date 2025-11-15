@@ -1,4 +1,3 @@
-
 export enum AppStatus {
     IDLE = 'IDLE',
     LOADING = 'LOADING',
@@ -46,5 +45,12 @@ export interface VerificationReport {
     overallAssessment: {
         status: OverallAssessmentStatus;
         summary: string;
+    };
+}
+
+export interface GroundingSource {
+    web: {
+        uri: string;
+        title: string;
     };
 }

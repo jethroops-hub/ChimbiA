@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppStatus, VerificationReport } from './types';
+import { AppStatus, VerificationReport, GroundingSource } from './types';
 import { verifyMedicinePackage } from './services/geminiService';
 import InitialScreen from './components/InitialScreen';
 import Spinner from './components/Spinner';
@@ -8,6 +8,7 @@ import ResultDisplay from './components/ResultDisplay';
 const App: React.FC = () => {
     const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
     const [report, setReport] = useState<VerificationReport | null>(null);
+    const [sources, setSources] = useState<GroundingSource[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
@@ -15,9 +16,9 @@ const App: React.FC = () => {
     const loadingMessages = [
         "Analizando imágenes con IA...",
         "Extrayendo texto y códigos de todas las fotos...",
-        "Consultando registro INVIMA...",
-        "Verificando código de barras...",
-        "Evaluando autenticidad visual...",
+        "Consultando registro INVIMA en tiempo real...",
+        "Verificando código de barras en bases de datos...",
+        "Comparando empaque con droguerías online...",
         "Compilando informe final...",
     ];
     const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
@@ -42,6 +43,7 @@ const App: React.FC = () => {
         setStatus(AppStatus.LOADING);
         setError(null);
         setReport(null);
+        setSources([]);
 
         let messageIndex = 0;
         const intervalId = setInterval(() => {
@@ -50,11 +52,12 @@ const App: React.FC = () => {
         }, 2500);
 
         try {
-            const result = await verifyMedicinePackage(selectedFiles);
+            const { report: result, sources: groundingSources } = await verifyMedicinePackage(selectedFiles);
             setReport(result);
+            setSources(groundingSources);
             setStatus(AppStatus.SUCCESS);
         } catch (err) {
-            setError('Ocurrió un error al verificar el empaque. Por favor, intenta de nuevo con fotos más claras y de todos los lados del empaque.');
+            setError('Ocurrió un error al verificar el empaque. Por favor, intenta de nuevo con fotos más claras y de todos los lados del empaque. Asegúrate de tener una buena conexión a internet.');
             setStatus(AppStatus.ERROR);
         } finally {
             clearInterval(intervalId);
@@ -65,6 +68,7 @@ const App: React.FC = () => {
         setStatus(AppStatus.IDLE);
         setReport(null);
         setError(null);
+        setSources([]);
         
         imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
         setImagePreviewUrls([]);
@@ -90,7 +94,7 @@ const App: React.FC = () => {
                     </div>
                 );
             case AppStatus.SUCCESS:
-                return <ResultDisplay report={report} imagePreviewUrls={imagePreviewUrls} onReset={handleReset} />;
+                return <ResultDisplay report={report} imagePreviewUrls={imagePreviewUrls} onReset={handleReset} sources={sources} />;
             case AppStatus.ERROR:
                 return (
                     <div className="flex flex-col items-center justify-center text-center p-8 text-white">

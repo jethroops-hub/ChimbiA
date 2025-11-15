@@ -1,11 +1,12 @@
 import React from 'react';
-import { VerificationReport, OverallAssessmentStatus, VerificationStatus } from '../types';
+import { VerificationReport, OverallAssessmentStatus, VerificationStatus, GroundingSource } from '../types';
 import ReportCard from './ReportCard';
 
 interface ResultDisplayProps {
     report: VerificationReport | null;
     imagePreviewUrls: string[];
     onReset: () => void;
+    sources?: GroundingSource[];
 }
 
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
@@ -40,7 +41,7 @@ const getIconForStatus = (status: VerificationStatus) => {
 };
 
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ report, imagePreviewUrls, onReset }) => {
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ report, imagePreviewUrls, onReset, sources }) => {
     if (!report) return null;
 
     const { invimaRegistration, barcode, visualAuthenticity, overallAssessment } = report;
@@ -101,6 +102,29 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ report, imagePreviewUrls,
                     </details>
                 </div>
             </div>
+
+            {sources && sources.length > 0 && (
+                <div className="mt-8">
+                    <h3 className="font-bold text-lg text-white mb-3 text-center">Fuentes de Verificación</h3>
+                    <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 max-h-40 overflow-y-auto">
+                        <ul className="space-y-2">
+                            {sources.map((source, index) => (
+                                <li key={index}>
+                                    <a 
+                                        href={source.web.uri} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-green-400 hover:text-green-300 hover:underline text-sm truncate block"
+                                        title={source.web.uri}
+                                    >
+                                        {source.web.title || source.web.uri}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
             
             <div className="text-center mt-10">
                 <button
