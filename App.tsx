@@ -57,7 +57,11 @@ const App: React.FC = () => {
             setSources(groundingSources);
             setStatus(AppStatus.SUCCESS);
         } catch (err) {
-            setError('Ocurrió un error al verificar el empaque. Por favor, intenta de nuevo con fotos más claras y de todos los lados del empaque. Asegúrate de tener una buena conexión a internet.');
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Ocurrió un error inesperado durante la verificación. Por favor, intenta de nuevo.');
+            }
             setStatus(AppStatus.ERROR);
         } finally {
             clearInterval(intervalId);
