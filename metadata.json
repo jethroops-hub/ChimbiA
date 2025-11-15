@@ -1,0 +1,7 @@
+{
+  "name": "ChimbiApp",
+  "description": "An application to verify the authenticity of medicine packaging in Colombia by analyzing its photo, checking INVIMA registration, barcode, and visual elements.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
