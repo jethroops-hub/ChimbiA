@@ -4,8 +4,10 @@ import { verifyMedicinePackage } from './services/geminiService';
 import InitialScreen from './components/InitialScreen';
 import Spinner from './components/Spinner';
 import ResultDisplay from './components/ResultDisplay';
+import ApiKeyPrompt from './components/ApiKeyPrompt';
 
 const App: React.FC = () => {
+    const [isApiKeyReady, setIsApiKeyReady] = useState<boolean>(false);
     const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
     const [report, setReport] = useState<VerificationReport | null>(null);
     const [sources, setSources] = useState<GroundingSource[]>([]);
@@ -22,6 +24,25 @@ const App: React.FC = () => {
         "Compilando informe final...",
     ];
     const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
+
+    useEffect(() => {
+        const checkApiKey = async () => {
+            if (await window.aistudio.hasSelectedApiKey()) {
+                setIsApiKeyReady(true);
+            }
+        };
+        checkApiKey();
+    }, []);
+
+    const handleSelectApiKey = async () => {
+        try {
+            await window.aistudio.openSelectKey();
+            // Assume success to avoid race conditions and immediately update UI
+            setIsApiKeyReady(true);
+        } catch (e) {
+            console.error("Error opening API key selection:", e);
+        }
+    };
 
     const addFile = useCallback((file: File) => {
         setSelectedFiles(prevFiles => [...prevFiles, file]);
@@ -58,7 +79,12 @@ const App: React.FC = () => {
             setStatus(AppStatus.SUCCESS);
         } catch (err) {
             if (err instanceof Error) {
-                setError(err.message);
+                if (err.message.includes("Requested entity was not found")) {
+                    setError("La clave de API seleccionada no es válida. Por favor, selecciona una nueva clave.");
+                    setIsApiKeyReady(false); // Reset key state to show prompt again
+                } else {
+                    setError(err.message);
+                }
             } else {
                 setError('Ocurrió un error inesperado durante la verificación. Por favor, intenta de nuevo.');
             }
@@ -125,7 +151,7 @@ const App: React.FC = () => {
         <main className="bg-slate-900 min-h-screen text-white flex flex-col items-center justify-center transition-all duration-500">
              <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-800/40 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
             <div className="relative z-10 w-full">
-                {renderContent()}
+                {isApiKeyReady ? renderContent() : <ApiKeyPrompt onSelectApiKey={handleSelectApiKey} />}
             </div>
             <footer className="absolute bottom-4 text-center text-slate-500 text-xs w-full px-4">
               <p>Higiene Ocupacional</p>
